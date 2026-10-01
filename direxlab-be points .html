@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Direx Lab — لوحة الربحية ونقطة التعادل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   Direx lab theme: full black, sharp edges, no rounded corners.
+   Neutrals are true gray (R=G=B) so black reads black, not navy.
+   Blue = primary/interactive. Yellow = secondary highlight.
+   Red/green stay reserved for pass/fail status only.
+   ============================================================ */
+:root{
+  --bg:#000000;
+  --panel:#0a0a0a;
+  --panel-2:#141414;
+  --panel-3:#1c1c1c;
+  --border:#2a2a2a;
+  --border-2:#3a3a3a;
+  --text:#ffffff;
+  --muted:#999999;
+  --muted-2:#6b6b6b;
+  --accent:#3b82f6;
+  --accent-dim:#2563eb;
+  --yellow:#facc15;
+  --yellow-dim:#a16207;
+  --good:#22c55e;
+  --warn:#facc15;
+  --bad:#ef4444;
+  --mono:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'IBM Plex Sans Arabic',system-ui,Tahoma,sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(59,130,246,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(59,130,246,.035) 1px,transparent 1px);
+  background-size:64px 64px;
+}
+.num{font-family:var(--mono);direction:ltr;unicode-bidi:isolate}
+
+/* ---------- shell ---------- */
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.side{border-left:1px solid var(--border);background:var(--panel);padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:0 20px 18px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.brand .logo{font-family:var(--mono);font-weight:700;font-size:17px;letter-spacing:.14em;
+  background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .sub{font-size:11px;color:var(--muted-2);margin-top:6px;letter-spacing:.02em}
+.navbtn{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-right:3px solid transparent;
+  color:var(--muted);font:inherit;font-size:14px;padding:12px 18px;cursor:pointer;text-align:right;transition:.15s}
+.navbtn:hover{background:var(--panel-2);color:var(--text)}
+.navbtn.active{background:var(--panel-2);color:var(--text);border-right-color:var(--accent)}
+.navbtn .n{font-family:var(--mono);font-size:11px;color:var(--muted-2);min-width:16px}
+.navbtn.active .n{color:var(--accent)}
+.side-foot{margin-top:24px;padding:16px 18px 0;border-top:1px solid var(--border);font-size:11px;color:var(--muted-2);line-height:1.9}
+.side-foot b{color:var(--muted);font-weight:600}
+
+.main{padding:26px 30px 60px;max-width:1500px;min-width:0;overflow-x:hidden}
+.topbar{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;
+  border:1px solid var(--border);border-bottom:2px solid var(--accent);background:var(--panel);padding:14px 18px;margin-bottom:22px}
+.topbar h1{font-size:19px;font-weight:700}
+.topbar .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+
+/* ---------- controls ---------- */
+button,input,select,textarea{font-family:inherit}
+.btn{background:var(--panel-2);border:1px solid var(--border-2);color:var(--text);font-size:12.5px;
+  padding:9px 14px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--accent-dim);color:#fff}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--bad);color:var(--bad)}
+.btn.small{padding:6px 10px;font-size:11.5px}
+
+label.fl{display:block;font-size:12.5px;color:var(--muted);margin-bottom:7px;line-height:1.6}
+label.fl b{color:var(--text);font-weight:600}
+label.fl .en{font-family:var(--mono);font-size:10.5px;color:var(--muted-2);letter-spacing:.03em}
+.inp{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  padding:10px 12px;font-family:var(--mono);font-size:14px;direction:ltr;text-align:left;transition:.15s}
+.inp:focus{outline:none;border-color:var(--accent);background:var(--panel-2)}
+.inp::placeholder{color:#4a4a4a}
+.field{position:relative}
+.field .suffix{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted-2);
+  font-family:var(--mono);pointer-events:none}
+.field .inp{padding-left:42px}
+.seg{display:flex;border:1px solid var(--border)}
+.seg button{flex:1;background:var(--bg);border:0;color:var(--muted);font-size:11.5px;padding:8px 6px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff;font-weight:600}
+
+/* ---------- cards / grid ---------- */
+.card{background:var(--panel);border:1px solid var(--border);padding:20px;margin-bottom:20px}
+.card.accent{border-top:2px solid var(--accent)}
+.card.yellow{border-top:2px solid var(--yellow)}
+.card h2{font-size:15px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+.card h2 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+.card .desc{font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:18px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.sep{height:1px;background:var(--border);margin:20px 0}
+
+/* ---------- KPI ---------- */
+.kpi{background:var(--panel-2);border:1px solid var(--border);padding:15px 16px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;right:0;width:2px;height:100%;background:var(--border-2)}
+.kpi.blue::after{background:var(--accent)}
+.kpi.yellow::after{background:var(--yellow)}
+.kpi.good::after{background:var(--good)}
+.kpi.bad::after{background:var(--bad)}
+.kpi .k-lab{font-size:11.5px;color:var(--muted);margin-bottom:9px;line-height:1.5}
+.kpi .k-lab span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--muted-2);letter-spacing:.04em;margin-top:3px}
+.kpi .k-val{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1.1}
+.kpi.blue .k-val{color:var(--accent)}
+.kpi.yellow .k-val{color:var(--yellow)}
+.kpi.good .k-val{color:var(--good)}
+.kpi.bad .k-val{color:var(--bad)}
+.kpi .k-note{font-size:11px;color:var(--muted-2);margin-top:8px;line-height:1.6}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;max-width:100%;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:780px}
+th{background:var(--panel-2);color:var(--muted);font-size:11px;font-weight:600;text-align:right;
+  padding:11px 12px;border-bottom:1px solid var(--border);white-space:nowrap;letter-spacing:.02em}
+td{padding:9px 12px;border-bottom:1px solid #1a1a1a;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#0f0f0f}
+td.n{font-family:var(--mono);direction:ltr;text-align:left}
+.tin{width:100%;background:transparent;border:1px solid transparent;color:var(--text);padding:6px 8px;font-size:13px}
+.tin:focus{outline:none;border-color:var(--accent);background:var(--bg)}
+.tin.n{font-family:var(--mono);direction:ltr;text-align:left}
+.empty{padding:34px 20px;text-align:center;color:var(--muted-2);font-size:13px;line-height:2}
+
+/* ---------- status ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:700;
+  padding:4px 9px;border:1px solid;letter-spacing:.04em;white-space:nowrap}
+.chip i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;font-style:normal}
+.c-stop{color:var(--bad);border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.09)}
+.c-wait{color:var(--muted);border-color:var(--border-2);background:var(--panel-2)}
+.c-pot{color:var(--yellow);border-color:rgba(250,204,21,.4);background:rgba(250,204,21,.08)}
+.c-scale{color:var(--good);border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.09)}
+
+.rec{border:1px solid var(--border);background:var(--panel-2);padding:15px 16px;margin-bottom:12px;
+  border-right:3px solid var(--border-2)}
+.rec.stop{border-right-color:var(--bad)}
+.rec.wait{border-right-color:var(--muted-2)}
+.rec.pot{border-right-color:var(--yellow)}
+.rec.scale{border-right-color:var(--good)}
+.rec .r-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rec .r-name{font-size:14px;font-weight:600;word-break:break-word}
+.rec .r-metrics{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:11px;font-size:11.5px;color:var(--muted)}
+.rec .r-metrics b{display:block;font-family:var(--mono);font-size:14px;color:var(--text);font-weight:700;margin-top:3px}
+.rec .r-metrics b.up{color:var(--good)}
+.rec .r-metrics b.down{color:var(--bad)}
+.rec .r-text{font-size:12.5px;line-height:2;color:#cfcfcf;border-top:1px solid var(--border);padding-top:11px}
+.rec .r-text .hl{color:var(--yellow);font-weight:600}
+.rec .r-text .act{display:block;margin-top:6px;color:var(--text);font-weight:600}
+
+.note{border:1px solid var(--border);border-right:3px solid var(--yellow);background:rgba(250,204,21,.04);
+  padding:13px 15px;font-size:12px;color:#d6d6d6;line-height:1.95;margin-bottom:16px}
+.note b{color:var(--yellow)}
+.bad-note{border-right-color:var(--bad);background:rgba(239,68,68,.05)}
+.bad-note b{color:var(--bad)}
+
+/* ---------- steps (formula transparency) ---------- */
+.steps{border:1px solid var(--border);background:var(--bg)}
+.step{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:baseline;
+  padding:11px 14px;border-bottom:1px solid #1a1a1a;font-size:12.5px}
+.step:last-child{border-bottom:0}
+.step.total{background:var(--panel-2);border-top:1px solid var(--border-2)}
+.step .s-lab{color:var(--muted);line-height:1.7}
+.step .s-lab em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--muted-2);display:block;margin-top:2px}
+.step .s-val{font-family:var(--mono);font-size:14px;font-weight:700;direction:ltr;white-space:nowrap}
+.step.total .s-val{color:var(--accent);font-size:16px}
+.step .s-val.minus{color:var(--bad)}
+
+.tab{display:none}
+.tab.on{display:block}
+details.adv summary{cursor:pointer;font-size:12.5px;color:var(--accent);padding:10px 0;list-style:none;user-select:none}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary::before{content:'+ ';font-family:var(--mono)}
+details.adv[open] summary::before{content:'− '}
+
+.imp{display:none;margin-top:16px;border:1px solid var(--border);background:var(--bg);padding:16px}
+.imp.on{display:block}
+textarea.inp{min-height:130px;resize:vertical;line-height:1.7;font-size:12px;text-align:left}
+.map{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.map select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 10px;font-size:12px}
+.map select:focus{outline:none;border-color:var(--accent)}
+
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:20px}
+.ss{background:var(--panel);padding:14px 16px}
+.ss .s-n{font-family:var(--mono);font-size:22px;font-weight:700}
+.ss .s-l{font-size:11.5px;color:var(--muted);margin-top:5px}
+.ss.stop .s-n{color:var(--bad)}.ss.wait .s-n{color:var(--muted)}
+.ss.pot .s-n{color:var(--yellow)}.ss.scale .s-n{color:var(--good)}
+
+.toast{position:fixed;bottom:22px;left:22px;z-index:99;background:var(--panel-2);border:1px solid var(--accent);
+  color:var(--text);font-size:12.5px;padding:12px 18px;opacity:0;transform:translateY(10px);
+  transition:.25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+
+@media(max-width:980px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-left:0;border-bottom:1px solid var(--border);display:flex;
+    flex-wrap:wrap;padding:0;align-items:stretch}
+  .brand{width:100%;padding:16px 18px;margin-bottom:0}
+  .navbtn{width:auto;flex:1 1 42%;border-right:0;border-bottom:3px solid transparent;justify-content:center}
+  .navbtn.active{border-right:0;border-bottom-color:var(--accent)}
+  .side-foot{display:none}
+  .main{padding:18px 14px 50px}
+  .g4,.g3,.g2,.map,.summary-strip{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .g4,.g3,.g2,.map,.summary-strip{grid-template-columns:1fr}
+  .kpi .k-val{font-size:20px}
+}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel-2:#f6f6f6;--panel-3:#eee;--border:#ccc;--border-2:#bbb;
+    --text:#000;--muted:#555;--muted-2:#777}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body::before,.side,.tools,.no-print{display:none!important}
+  .shell{display:block}.main{padding:0;max-width:none}
+  .tab{display:block!important;page-break-before:always}
+  .tab:first-of-type{page-break-before:avoid}
+  .card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">DIREX LAB</div>
+      <div class="sub">لوحة الربحية ونقطة التعادل</div>
+    </div>
+    <button class="navbtn active" data-tab="t1"><span class="n">01</span> التكاليف ونقطة التعادل</button>
+    <button class="navbtn" data-tab="t2"><span class="n">02</span> بيانات الإعلانات</button>
+    <button class="navbtn" data-tab="t3"><span class="n">03</span> التوصيات والقرارات</button>
+    <button class="navbtn" data-tab="t4"><span class="n">04</span> التقرير النهائي</button>
+    <div class="side-foot">
+      <b>بياناتك محفوظة على جهازك فقط</b><br />
+      الملف بيشتغل offline ومفيش أي رقم بيتبعت لأي سيرفر.
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">التكاليف ونقطة التعادل</h1>
+        <div class="hint">املأ تكاليفك مرة واحدة، وبعدها كل إعلان هيتحكم عليه بأرقامك إنت — مش بأرقام عامة.</div>
+      </div>
+      <div class="tools no-print">
+        <button class="btn small" id="btnDemo">بيانات تجريبية</button>
+        <button class="btn small" id="btnBackup">حفظ نسخة</button>
+        <label class="btn small" for="fileLoad">استرجاع نسخة</label>
+        <input type="file" id="fileLoad" accept=".json,application/json" style="display:none" />
+        <button class="btn small" id="btnReset">مسح الكل</button>
+        <button class="btn small primary" id="btnPrint">طباعة / PDF</button>
+      </div>
+    </div>
+
+    <!-- ---------- TAB 1 : COSTS & BREAK-EVEN ---------- -->
+    <section class="tab on" id="t1">
+      <div class="card accent">
+        <h2><span class="dot"></span> تكاليفك الأساسية</h2>
+        <p class="desc">الأرقام دي بتاعة آخر شهر (أو متوسط شهر عندك). كل الحسابات اللي بعدها بتتبني عليها.</p>
+
+        <div class="grid g4">
+          <div>
+            <label class="fl"><b>متوسط قيمة الطلب</b><span class="en">AVERAGE ORDER VALUE</span></label>
+            <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="aov" type="number" min="0" step="any" placeholder="0" /></div>
+          </div>
+          <div>
+            <label class="fl"><b>عدد الأوردرات الشهرية</b><span class="en">ORDERS / MONTH (CONFIRMED)</span></label>
+            <div class="field"><span class="suffix">order</span><input class="inp cfg" id="orders" type="number" min="0" step="any" placeholder="0" /></div>
+          </div>
+          <div>
+            <label class="fl"><b>المصروف الشهري على الإعلانات</b><span class="en">MONTHLY AD SPEND</span></label>
+            <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="spend" type="number" min="0" step="any" placeholder="0" /></div>
+          </div>
+          <div>
+            <label class="fl"><b>نسبة التسليم</b><span class="en">DELIVERY RATE %</span></label>
+            <div class="field"><span class="suffix">%</span><input class="inp cfg" id="dr" type="number" min="1" max="100" step="any" placeholder="100" /></div>
+          </div>
+          <div>
+            <label class="fl"><b>تكلفة التصنيع</b><span class="en">COGS</span></label>
+            <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="cogs" type="number" min="0" step="any" placeholder="0" /></div>
+            <div class="seg" style="margin-top:8px">
+              <button type="button" data-cogs="unit" class="on">للطلب الواحد</button>
+              <button type="button" data-cogs="month">إجمالي شهري</button>
+            </div>
+          </div>
+          <div>
+            <label class="fl"><b>التكاليف الثابتة الشهرية</b><span class="en">OVERHEAD / MONTH</span></label>
+            <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="overhead" type="number" min="0" step="any" placeholder="0" /></div>
+            <div class="hint" style="font-size:11px;color:var(--muted-2);margin-top:8px;line-height:1.7">مرتبات + إيجار + أي تكلفة ثابتة</div>
+          </div>
+          <div>
+            <label class="fl"><b>شركة الشحن — الطلب المسلّم</b><span class="en">COURIER FEE / DELIVERED ORDER</span></label>
+            <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="ship" type="number" min="0" step="any" placeholder="0" /></div>
+            <div class="hint" style="font-size:11px;color:var(--muted-2);margin-top:8px;line-height:1.7">اللي بتدفعه لشركة الشحن عن كل أوردر بيوصل — سيبها صفر لو محمّلة على العميل</div>
+          </div>
+          <div>
+            <label class="fl"><b>شركة الشحن — الطلب المرتجع</b><span class="en">COURIER FEE / RETURNED ORDER</span></label>
+            <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="ret" type="number" min="0" step="any" placeholder="0" /></div>
+            <div class="hint" style="font-size:11px;color:var(--muted-2);margin-top:8px;line-height:1.7">شحن رايح جاي على الأوردر اللي مترفض أو مرجّع</div>
+          </div>
+          <div>
+            <label class="fl"><b>رسوم شركة الشحن الشهرية</b><span class="en">MONTHLY COURIER / FULFILLMENT FEES</span></label>
+            <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="courier" type="number" min="0" step="any" placeholder="0" /></div>
+            <div class="hint" style="font-size:11px;color:var(--muted-2);margin-top:8px;line-height:1.7">اشتراك شهري / رسوم ثابتة / تخزين — بتتقسم على الأوردرات المسلّمة</div>
+          </div>
+        </div>
+
+        <details class="adv">
+          <summary>إعدادات إضافية (العملة، رسوم التحصيل، حدود القرار)</summary>
+          <div class="grid g4" style="margin-top:6px">
+            <div>
+              <label class="fl"><b>العملة</b><span class="en">CURRENCY</span></label>
+              <input class="inp cfg" id="cur" type="text" placeholder="ج.م" dir="rtl" style="text-align:right" />
+            </div>
+            <div>
+              <label class="fl"><b>رسوم الدفع / التحصيل</b><span class="en">PAYMENT FEES % OF AOV</span></label>
+              <div class="field"><span class="suffix">%</span><input class="inp cfg" id="fees" type="number" min="0" max="100" step="any" placeholder="0" /></div>
+            </div>
+            <div>
+              <label class="fl"><b>حد الإيقاف للإعلان الخسران</b><span class="en">STOP THRESHOLD</span></label>
+              <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="thStop" type="number" min="0" step="any" placeholder="500" /></div>
+            </div>
+            <div>
+              <label class="fl"><b>حد الثبات للإعلان الرابح</b><span class="en">SCALE THRESHOLD</span></label>
+              <div class="field"><span class="suffix cur">ج.م</span><input class="inp cfg" id="thScale" type="number" min="0" step="any" placeholder="4000" /></div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div id="beWrap"></div>
+    </section>
+
+    <!-- ---------- TAB 2 : ADS DATA ---------- -->
+    <section class="tab" id="t2">
+      <div class="card accent">
+        <h2><span class="dot"></span> بيانات الإعلانات</h2>
+        <p class="desc">
+          اكتب كل إعلان شغّال: المصروف وعدد الأوردرات اللي جابها (من مدير الإعلانات، قبل التسليم).
+          خانة «قيمة المبيعات» اختيارية — لو سيبتها فاضية هنحسبها = عدد الأوردرات × متوسط قيمة الطلب.
+        </p>
+        <div class="tools no-print" style="margin-bottom:16px">
+          <button class="btn primary small" id="btnAdd">+ إضافة إعلان</button>
+          <button class="btn small" id="btnImp">استيراد CSV / لصق من Excel</button>
+          <button class="btn small danger" id="btnClearAds">مسح الإعلانات</button>
+        </div>
+
+        <div class="imp no-print" id="impBox">
+          <p class="desc" style="margin-bottom:12px">
+            انسخ الجدول من Excel / Google Sheets أو من تصدير Meta Ads والصقه هنا (أول صف = أسماء الأعمدة)، وبعدها راجع ربط الأعمدة.
+          </p>
+          <textarea class="inp" id="impText" placeholder="Ad name	Amount spent	Purchases	Purchases conversion value&#10;Creative A	1250	9	5400"></textarea>
+          <div class="tools" style="margin-top:12px">
+            <button class="btn small" id="btnParse">اقرأ الأعمدة</button>
+            <button class="btn small primary" id="btnDoImp" style="display:none">استيراد البيانات</button>
+            <button class="btn small ghost" id="btnCancelImp">إلغاء</button>
+          </div>
+          <div class="map" id="mapBox" style="display:none">
+            <div><label class="fl"><b>اسم الإعلان</b></label><select id="mName"></select></div>
+            <div><label class="fl"><b>المصروف</b></label><select id="mSpend"></select></div>
+            <div><label class="fl"><b>عدد الأوردرات</b></label><select id="mPur"></select></div>
+            <div><label class="fl"><b>قيمة المبيعات (اختياري)</b></label><select id="mRev"></select></div>
+          </div>
+          <div id="impMsg" style="margin-top:12px"></div>
+        </div>
+
+        <div class="tw" style="margin-top:4px"><table id="adsTable">
+          <thead><tr>
+            <th style="min-width:190px">اسم الإعلان</th>
+            <th>المصروف</th>
+            <th>الأوردرات</th>
+            <th>قيمة المبيعات</th>
+            <th>CPP</th>
+            <th>ROAS</th>
+            <th>صافي الربح</th>
+            <th>الحالة</th>
+            <th class="no-print"></th>
+          </tr></thead>
+          <tbody id="adsBody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ---------- TAB 3 : RECOMMENDATIONS ---------- -->
+    <section class="tab" id="t3">
+      <div id="recWrap"></div>
+    </section>
+
+    <!-- ---------- TAB 4 : REPORT ---------- -->
+    <section class="tab" id="t4">
+      <div id="repWrap"></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+/* ============================================================================
+   Direx Lab — Profit & Break-even dashboard
+   كل الحسابات rule-based وشفافة: مفيش أي رقم متخمّن أو جاي من مصدر برّه بياناتك.
+
+   المنطق الأساسي:
+     الأوردرات المسلّمة = الأوردرات المؤكدة × نسبة التسليم
+     تكلفة ثابتة للطلب   = (التكاليف الثابتة + رسوم شركة الشحن الشهرية) ÷ الأوردرات المسلّمة
+     هامش الطلب المسلّم  = AOV − تصنيع − شحن الطلب المسلّم − رسوم الدفع − التكلفة الثابتة للطلب
+     خسارة المرتجع/طلب مؤكد = (1 − نسبة التسليم) × تكلفة المرتجع
+     تعادل CPP (أرقام المنصة) = هامش الطلب المسلّم × نسبة التسليم − خسارة المرتجع
+     تعادل ROAS (أرقام المنصة) = AOV ÷ تعادل CPP
+   ========================================================================== */
+
+var LS_KEY = 'direx_profit_dashboard_v1';
+
+var DEF = { aov:0, orders:0, spend:0, dr:100, cogs:0, cogsMode:'unit', overhead:0,
+            ship:0, ret:0, courier:0, cur:'ج.م', fees:0, thStop:500, thScale:4000 };
+
+var cfg = Object.assign({}, DEF);
+var ads = [];
+var uid = 1;
+
+/* ------------------------------ helpers ---------------------------------- */
+function $(id){ return document.getElementById(id); }
+function num(v){ var n = parseFloat(v); return isFinite(n) ? n : 0; }
+function money(n, d){
+  if(n === null || n === undefined || !isFinite(n)) return '—';
+  return n.toLocaleString('en-US',{minimumFractionDigits:d||0, maximumFractionDigits:d||0}) + ' ' + cfg.cur;
+}
+function dec(n, d){
+  if(n === null || n === undefined || !isFinite(n)) return '—';
+  return n.toLocaleString('en-US',{minimumFractionDigits:d===undefined?2:d, maximumFractionDigits:d===undefined?2:d});
+}
+function esc(s){ return String(s===undefined||s===null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg){
+  var t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(function(){ t.classList.remove('on'); }, 2200);
+}
+
+/* ------------------------------ storage ---------------------------------- */
+var storageOK = true;
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({cfg:cfg, ads:ads})); }
+  catch(e){ storageOK = false; }
+}
+function load(){
+  try{
+    localStorage.setItem(LS_KEY + '_t','1'); localStorage.removeItem(LS_KEY + '_t');
+    var raw = localStorage.getItem(LS_KEY); if(!raw) return;
+    var d = JSON.parse(raw);
+    if(d && d.cfg) cfg = Object.assign({}, DEF, d.cfg);
+    if(d && d.ads && d.ads.length){
+      ads = d.ads;
+      ads.forEach(function(a){ a.id = uid++; });
+    }
+  }catch(e){ storageOK = false; }
+}
+
+/* ============================== الحسابات ================================== */
+function calc(){
+  var dr = Math.min(Math.max(num(cfg.dr) || 100, 1), 100) / 100;
+  var delivered = num(cfg.orders) * dr;
+
+  var cogsUnit = cfg.cogsMode === 'unit'
+      ? num(cfg.cogs)
+      : (delivered > 0 ? num(cfg.cogs) / delivered : 0);
+
+  var fixedMonthly = num(cfg.overhead) + num(cfg.courier);   // إيجار/مرتبات + رسوم شركة الشحن الشهرية
+  var fixedPer     = delivered > 0 ? fixedMonthly / delivered : 0;
+  var feePer       = num(cfg.aov) * num(cfg.fees) / 100;
+  var varPer       = cogsUnit + num(cfg.ship) + feePer;      // تكاليف متغيرة لكل طلب مسلّم
+  var cm           = num(cfg.aov) - varPer - fixedPer;       // هامش الطلب المسلّم قبل الإعلانات
+  var retLoss      = (1 - dr) * num(cfg.ret);                // خسارة المرتجع لكل طلب مؤكد
+
+  var beCppDel  = cm;                       // أقصى تكلفة إعلان لكل طلب واصل فعلاً
+  var beCppConf = cm * dr - retLoss;        // أقصى CPP بأرقام مدير الإعلانات
+  var beRoas    = beCppConf > 0 ? num(cfg.aov) / beCppConf : Infinity;
+  var beRoasReal= beRoas * dr;              // نفس النقطة لكن على الإيراد المحصّل فعلاً
+
+  var curCpp  = num(cfg.orders) > 0 ? num(cfg.spend) / num(cfg.orders) : null;
+  var curCppD = delivered > 0 ? num(cfg.spend) / delivered : null;
+  var curRoas = num(cfg.spend) > 0 ? (num(cfg.aov) * num(cfg.orders)) / num(cfg.spend) : null;
+  var curRoasReal = num(cfg.spend) > 0 ? (num(cfg.aov) * delivered) / num(cfg.spend) : null;
+
+  /* صافي الربح = الأوردرات المؤكدة × (تعادل CPP − CPP الفعلي) */
+  var net = num(cfg.orders) * beCppConf - num(cfg.spend);
+  var revReal = num(cfg.aov) * delivered;
+  var margin = revReal > 0 ? (net / revReal) * 100 : null;
+
+  var ready = num(cfg.aov) > 0 && num(cfg.orders) > 0;
+
+  return { dr:dr, delivered:delivered, cogsUnit:cogsUnit, fixedMonthly:fixedMonthly, fixedPer:fixedPer,
+           feePer:feePer, varPer:varPer, cm:cm, retLoss:retLoss, beCppDel:beCppDel, beCppConf:beCppConf,
+           beRoas:beRoas, beRoasReal:beRoasReal, curCpp:curCpp, curCppD:curCppD, curRoas:curRoas,
+           curRoasReal:curRoasReal, net:net, revReal:revReal, margin:margin, ready:ready };
+}
+
+/* حساب إعلان واحد بأرقامه هو (لو له AOV مختلف بيتحسب بيه) */
+function adCalc(a, k){
+  var spend = num(a.spend), pur = num(a.pur);
+  var rev   = num(a.rev) > 0 ? num(a.rev) : pur * num(cfg.aov);
+  var aovEff= pur > 0 ? rev / pur : num(cfg.aov);
+
+  var feePer = aovEff * num(cfg.fees) / 100;
+  var cmAd   = aovEff - k.cogsUnit - num(cfg.ship) - feePer - k.fixedPer;
+  var beCpp  = cmAd * k.dr - k.retLoss;                    // تعادل CPP الخاص بالإعلان ده
+  var beRoas = beCpp > 0 ? aovEff / beCpp : Infinity;
+
+  var cpp  = pur > 0 ? spend / pur : null;
+  var roas = spend > 0 ? rev / spend : null;
+  var profit = pur * beCpp - spend;                        // صافي ربح الإعلان بعد كل التكاليف
+
+  var status;
+  if(!k.ready || spend <= 0){ status = 'na'; }
+  else if(pur > 0 && profit > 0){ status = spend > num(cfg.thScale) ? 'scale' : 'pot'; }
+  else { status = spend > num(cfg.thStop) ? 'stop' : 'wait'; }
+
+  return { spend:spend, pur:pur, rev:rev, aovEff:aovEff, cpp:cpp, roas:roas,
+           beCpp:beCpp, beRoas:beRoas, profit:profit, status:status,
+           delivered: pur * k.dr };
+}
+
+var ST = {
+  stop : { label:'أوقفه',      en:'STOP',  cls:'c-stop',  rc:'stop'  },
+  wait : { label:'استنى',      en:'WAIT',  cls:'c-wait',  rc:'wait'  },
+  pot  : { label:'مرشّح رابح', en:'WATCH', cls:'c-pot',   rc:'pot'   },
+  scale: { label:'زوّد',       en:'SCALE', cls:'c-scale', rc:'scale' },
+  na   : { label:'ناقص بيانات',en:'N/A',   cls:'c-wait',  rc:'wait'  }
+};
+function chip(s){
+  var m = ST[s] || ST.na;
+  return '<span class="chip ' + m.cls + '"><i></i>' + m.label + ' · ' + m.en + '</span>';
+}
+
+/* ======================= 01 — نقطة التعادل =============================== */
+function renderBE(){
+  var k = calc(), w = $('beWrap');
+
+  if(!k.ready){
+    w.innerHTML = '<div class="card"><div class="note"><b>ابدأ من هنا:</b> املأ على الأقل ' +
+      '«متوسط قيمة الطلب» و«عدد الأوردرات الشهرية» وهتظهر لك نقطة التعادل فورًا، ' +
+      'وبعدها انتقل لتبويب بيانات الإعلانات.</div></div>';
+    return;
+  }
+
+  var neg = k.beCppConf <= 0;
+  var profitable = k.net > 0;
+
+  var html = '';
+  if(!storageOK){
+    html += '<div class="card"><div class="note bad-note no-print"><b>الحفظ التلقائي مقفول في المتصفح ده:</b> ' +
+      'بياناتك هتضيع لو قفلت الصفحة. استخدم زرار «حفظ نسخة» فوق عشان تنزّل ملف بياناتك، ' +
+      'و«استرجاع نسخة» عشان ترجّعه في أي وقت.</div></div>';
+  }
+
+  /* --- نقطة التعادل --- */
+  html += '<div class="card yellow"><h2><span class="dot" style="background:var(--yellow)"></span> نقطة التعادل بتاعتك</h2>' +
+    '<p class="desc">دي الأرقام اللي لو عديتها تبقى بتكسب، ولو تحتها تبقى بتخسر. ' +
+    'عمود «أرقام المنصة» هو اللي تقارن بيه مدير الإعلانات على طول.</p><div class="grid g4">';
+
+  html += kpi('blue','تعادل الـ ROAS','BREAK-EVEN ROAS (PLATFORM)',
+      neg ? '—' : dec(k.beRoas,2) + 'x',
+      neg ? 'التكاليف أكبر من قيمة الطلب — مفيش ROAS يخليك تكسب' :
+            'أي إعلان تحت ' + dec(k.beRoas,2) + 'x في المنصة = خسارة');
+
+  html += kpi('blue','تعادل تكلفة الطلب (CPP)','BREAK-EVEN CPP (PLATFORM)',
+      neg ? '—' : money(k.beCppConf,0),
+      neg ? '—' : 'أقصى مبلغ تدفعه إعلان لكل أوردر بيظهر في المنصة');
+
+  html += kpi('yellow','تكلفة الطلب قبل الإعلانات','TOTAL COST / DELIVERED ORDER',
+      money(k.varPer + k.fixedPer,0),
+      'تصنيع + شحن + نصيبه من التكاليف الثابتة');
+
+  html += kpi('yellow','هامش الطلب المسلّم','CONTRIBUTION / DELIVERED ORDER',
+      money(k.cm,0),
+      'ده أقصى مبلغ إعلانات يستحمله الأوردر الواصل فعلاً');
+
+  html += '</div>';
+
+  html += '<div class="sep"></div><div class="grid g4">';
+  html += kpi(profitable?'good':'bad','أداؤك الحالي — CPP','CURRENT CPP (PLATFORM)',
+      money(k.curCpp,0),
+      neg ? '—' : (k.curCpp <= k.beCppConf ? 'تحت التعادل بـ ' + money(k.beCppConf-k.curCpp,0)
+                                            : 'فوق التعادل بـ ' + money(k.curCpp-k.beCppConf,0)));
+  html += kpi(profitable?'good':'bad','أداؤك الحالي — ROAS','CURRENT ROAS (PLATFORM)',
+      dec(k.curRoas,2) + 'x',
+      'وعلى الإيراد المحصّل فعلاً: ' + dec(k.curRoasReal,2) + 'x');
+  html += kpi(profitable?'good':'bad','صافي الربح الشهري','NET PROFIT / MONTH',
+      money(k.net,0),
+      'الإيراد المحصّل ' + money(k.revReal,0) + ' − كل التكاليف والإعلانات');
+  html += kpi(profitable?'good':'bad','هامش الربح الصافي','NET MARGIN',
+      k.margin === null ? '—' : dec(k.margin,1) + '%',
+      'من إجمالي الإيراد المحصّل فعلاً');
+  html += '</div>';
+
+  if(neg){
+    html += '<div class="note bad-note" style="margin-top:18px"><b>تنبيه:</b> تكاليفك (تصنيع + شحن + ثابتة + مرتجعات) ' +
+      'أكبر من أو تساوي قيمة الطلب. يعني إنت بتخسر على كل أوردر حتى لو الإعلانات ببلاش. ' +
+      'محتاج ترفع سعر البيع، أو تنزّل التصنيع/الشحن، أو ترفع نسبة التسليم قبل ما تفكر في الإعلانات.</div>';
+  }
+  html += '</div>';
+
+  /* --- شرح الحساب خطوة بخطوة --- */
+  html += '<div class="card"><h2><span class="dot"></span> الحساب خطوة بخطوة</h2>' +
+    '<p class="desc">كل رقم فوق طالع من الخطوات دي — مفيش صندوق أسود.</p><div class="steps">';
+  html += step('الأوردرات المسلّمة فعليًا', 'ORDERS × DELIVERY RATE',
+               dec(k.delivered,0) + ' order', false);
+  html += step('تكلفة التصنيع للطلب', 'COGS / ORDER', money(k.cogsUnit,1), true);
+  html += step('شركة الشحن — الطلب المسلّم', 'COURIER / DELIVERED', money(num(cfg.ship),1), true);
+  if(num(cfg.fees) > 0)
+    html += step('رسوم الدفع / التحصيل', num(cfg.fees) + '% OF AOV', money(k.feePer,1), true);
+  html += step('التكاليف الثابتة للطلب الواحد',
+               'FIXED (' + money(num(cfg.overhead),0) + ' + شحن شهري ' + money(num(cfg.courier),0) + ') ÷ DELIVERED',
+               money(k.fixedPer,1), true);
+  html += step('هامش الطلب المسلّم', 'AOV ' + money(num(cfg.aov),0) + ' − كل اللي فوق', money(k.cm,1), false, true);
+  html += step('خسارة المرتجع لكل طلب مؤكد',
+               '(1 − ' + dec(k.dr*100,0) + '%) × ' + money(num(cfg.ret),0), money(k.retLoss,1), true);
+  html += step('تعادل الـ CPP بأرقام المنصة',
+               'CM × ' + dec(k.dr*100,0) + '% − خسارة المرتجع', money(k.beCppConf,1), false, true);
+  html += step('تعادل الـ ROAS بأرقام المنصة', 'AOV ÷ BREAK-EVEN CPP',
+               neg ? '—' : dec(k.beRoas,2) + 'x', false, true);
+  html += '</div></div>';
+
+  /* --- حساسية نسبة التسليم --- */
+  html += '<div class="card"><h2><span class="dot"></span> تأثير نسبة التسليم على التعادل</h2>' +
+    '<p class="desc">نسبة التسليم بتحرّك نقطة التعادل أكتر من أي رقم تاني. ' +
+    'كل 5% زيادة بتوسّع لك مساحة الصرف على الإعلانات.</p><div class="tw"><table><thead><tr>' +
+    '<th>نسبة التسليم</th><th>تعادل CPP (المنصة)</th><th>تعادل ROAS</th><th>صافي الربح الشهري بنفس أرقامك</th>' +
+    '</tr></thead><tbody>';
+  [60,65,70,75,80,85,90,95,100].forEach(function(p){
+    var d = p/100;
+    var delv = num(cfg.orders) * d;
+    var cogsU = cfg.cogsMode === 'unit' ? num(cfg.cogs) : (delv > 0 ? num(cfg.cogs)/delv : 0);
+    var fx = delv > 0 ? k.fixedMonthly / delv : 0;
+    var cmx = num(cfg.aov) - cogsU - num(cfg.ship) - k.feePer - fx;
+    var be  = cmx * d - (1-d) * num(cfg.ret);
+    var nt  = num(cfg.orders) * be - num(cfg.spend);
+    var cur = Math.abs(p - k.dr*100) < 0.01;
+    var tr = '<tr' + (cur ? ' style="background:rgba(59,130,246,.10)"' : '') + '>' +
+      '<td class="n">' + p + '%' + (cur ? ' <span style="color:var(--accent);font-size:10px">← إنت هنا</span>' : '') + '</td>' +
+      '<td class="n">' + (be > 0 ? money(be,0) : '—') + '</td>' +
+      '<td class="n">' + (be > 0 ? dec(num(cfg.aov)/be,2) + 'x' : '—') + '</td>' +
+      '<td class="n" style="color:' + (nt >= 0 ? 'var(--good)' : 'var(--bad)') + '">' + money(nt,0) + '</td></tr>';
+    html += tr;
+  });
+  html += '</tbody></table></div></div>';
+
+  w.innerHTML = html;
+}
+
+function kpi(cls, lab, en, val, note){
+  return '<div class="kpi ' + cls + '"><div class="k-lab">' + lab + '<span>' + en + '</span></div>' +
+    '<div class="k-val">' + val + '</div><div class="k-note">' + note + '</div></div>';
+}
+function step(lab, en, val, minus, total){
+  return '<div class="step' + (total ? ' total' : '') + '"><div class="s-lab">' + lab + '<em>' + en + '</em></div>' +
+    '<div class="s-val' + (minus ? ' minus' : '') + '">' + (minus ? '− ' : '') + val + '</div></div>';
+}
+
+/* ======================= 02 — جدول الإعلانات ============================= */
+function renderAds(){
+  var k = calc(), b = $('adsBody');
+  if(!ads.length){
+    b.innerHTML = '<tr><td colspan="9" class="empty">مفيش إعلانات لسه.<br />' +
+      'اضغط «إضافة إعلان» وسجّل إعلاناتك، أو الصق الداتا من مدير الإعلانات باستخدام «استيراد CSV».</td></tr>';
+    return;
+  }
+  var html = '';
+  ads.forEach(function(a, i){
+    var r = adCalc(a, k);
+    html += '<tr data-i="' + i + '">' +
+      '<td><input class="tin" data-f="name" value="' + esc(a.name) + '" placeholder="اسم الإعلان" /></td>' +
+      '<td><input class="tin n" data-f="spend" type="number" min="0" step="any" value="' + (a.spend===''?'':a.spend) + '" placeholder="0" /></td>' +
+      '<td><input class="tin n" data-f="pur" type="number" min="0" step="any" value="' + (a.pur===''?'':a.pur) + '" placeholder="0" /></td>' +
+      '<td><input class="tin n" data-f="rev" type="number" min="0" step="any" value="' + (a.rev===''?'':a.rev) + '" placeholder="تلقائي" /></td>' +
+      '<td class="n" style="color:' + cmpColor(r.cpp, r.beCpp, true) + '">' + money(r.cpp,0) + '</td>' +
+      '<td class="n" style="color:' + cmpColor(r.roas, r.beRoas, false) + '">' + (r.roas===null?'—':dec(r.roas,2)+'x') + '</td>' +
+      '<td class="n" style="color:' + (r.profit >= 0 ? 'var(--good)' : 'var(--bad)') + '">' + money(r.profit,0) + '</td>' +
+      '<td>' + chip(r.status) + '</td>' +
+      '<td class="no-print"><button class="btn small danger" data-del="' + i + '">حذف</button></td></tr>';
+  });
+  b.innerHTML = html;
+}
+function cmpColor(v, be, lowerIsBetter){
+  if(v === null || !isFinite(be)) return 'var(--text)';
+  var good = lowerIsBetter ? v <= be : v >= be;
+  return good ? 'var(--good)' : 'var(--bad)';
+}
+
+/* ======================= 03 — التوصيات =================================== */
+function recText(a, r, k){
+  var gapCpp = r.beCpp - r.cpp;
+  var base = 'الإعلان جاب <span class="hl">' + dec(r.pur,0) + '</span> أوردر بتكلفة ' +
+    '<span class="hl">' + money(r.cpp,0) + '</span> للأوردر، ونقطة تعادله ' +
+    '<span class="hl">' + money(r.beCpp,0) + '</span>';
+
+  if(r.status === 'stop'){
+    return (r.pur > 0
+        ? base + ' — يعني بتخسر ' + money(-gapCpp,0) + ' على كل أوردر.'
+        : 'الإعلان صرف ' + money(r.spend,0) + ' ومجابش ولا أوردر.') +
+      ' وصرف ' + money(r.spend,0) + ' وده أكبر من حد الإيقاف (' + money(num(cfg.thStop),0) + ')، ' +
+      'يعني أخد فرصة كافية والحكم عليه دلوقتي مبني على بيانات حقيقية مش صدفة.' +
+      '<span class="act">القرار: أوقف الإعلان ده دلوقتي. خسارته الصافية حتى الآن ' + money(-r.profit,0) +
+      '، ولو كمّلت بنفس المعدل هتخسر نفس الرقم مع كل ' + money(r.spend,0) + ' إضافية.</span>';
+  }
+  if(r.status === 'wait'){
+    return (r.pur > 0 ? base + ' — لسه تحت التعادل.' :
+           'الإعلان صرف ' + money(r.spend,0) + ' ولسه مجابش أوردر.') +
+      ' بس الصرف لسه ' + money(r.spend,0) + ' وأقل من حد الإيقاف (' + money(num(cfg.thStop),0) + ')، ' +
+      'والعينة صغيرة جدًا إن الحكم عليه دلوقتي يبقى متسرع.' +
+      '<span class="act">القرار: استنى عليه شوية من غير ما تلمس الميزانية لحد ما يوصل ' +
+      money(num(cfg.thStop),0) + ' صرف. لو عدّاها وهو لسه تحت التعادل — أوقفه.</span>';
+  }
+  if(r.status === 'pot'){
+    return base + ' — يعني بتكسب ' + money(gapCpp,0) + ' على كل أوردر، وROAS ' +
+      dec(r.roas,2) + 'x فوق تعادل ' + dec(r.beRoas,2) + 'x. ' +
+      'بس صرفه ' + money(r.spend,0) + ' لسه أقل من حد الثبات (' + money(num(cfg.thScale),0) + ')، ' +
+      'والنتيجة دي ممكن تكون عيّنة محظوظة.' +
+      '<span class="act">القرار: سيبه شغّال بنفس الميزانية لحد ما يعدّي ' + money(num(cfg.thScale),0) +
+      ' صرف وهو محافظ على أرقامه. ساعتها بس ابدأ تزوّد. متعملش تغييرات على الإعلان نفسه دلوقتي.</span>';
+  }
+  if(r.status === 'scale'){
+    return base + ' — ربح صافي ' + money(r.profit,0) + ' من صرف ' + money(r.spend,0) + ' ' +
+      '(فوق حد الثبات ' + money(num(cfg.thScale),0) + ')، وROAS ' + dec(r.roas,2) +
+      'x فوق تعادل ' + dec(r.beRoas,2) + 'x. الأداء ده مثبت على حجم صرف محترم مش صدفة.' +
+      '<span class="act">القرار: زوّد الميزانية ٢٠٪–٣٠٪ كل ٢–٣ أيام وراقب الـ CPP بعد كل زيادة. ' +
+      'ما تزوّدش أكتر من كده مرة واحدة عشان ما ترجّعش الإعلان لمرحلة التعلّم.</span>';
+  }
+  return 'محتاج تملأ المصروف وبيانات التكاليف الأساسية عشان يتحكم على الإعلان ده.';
+}
+
+function renderRec(){
+  var k = calc(), w = $('recWrap');
+
+  if(!k.ready || !ads.length){
+    w.innerHTML = '<div class="card"><div class="note"><b>ناقص خطوة:</b> ' +
+      (!k.ready ? 'املأ تكاليفك في تبويب «التكاليف ونقطة التعادل» الأول. '
+                : 'ضيف إعلاناتك في تبويب «بيانات الإعلانات» الأول.') +
+      'بعدها هتلاقي هنا قرار مكتوب لكل إعلان.</div></div>';
+    return;
+  }
+
+  var groups = { scale:[], pot:[], stop:[], wait:[], na:[] };
+  var wasted = 0, earned = 0;
+  ads.forEach(function(a){
+    var r = adCalc(a, k);
+    groups[r.status].push({a:a, r:r});
+    if(r.profit < 0) wasted += -r.profit; else earned += r.profit;
+  });
+  Object.keys(groups).forEach(function(g){
+    groups[g].sort(function(x,y){ return y.r.profit - x.r.profit; });
+  });
+
+  var html = '';
+  html += '<div class="summary-strip">' +
+    ss('scale', groups.scale.length, 'إعلان ثابت وجاهز للتزويد') +
+    ss('pot',   groups.pot.length,   'مرشّح رابح — تحت المراقبة') +
+    ss('stop',  groups.stop.length,  'إعلان لازم يقف دلوقتي') +
+    ss('wait',  groups.wait.length,  'لسه بدري عليه — استنى') + '</div>';
+
+  html += '<div class="card accent"><h2><span class="dot"></span> الخلاصة</h2><div class="grid g3">' +
+    kpi('bad','فلوس بتضيع في إعلانات خسرانة','LOSS FROM LOSING ADS', money(wasted,0),
+        'ده اللي هتوفّره لو نفّذت قرارات الإيقاف اللي تحت') +
+    kpi('good','ربح الإعلانات الرابحة','PROFIT FROM WINNING ADS', money(earned,0),
+        'صافي بعد كل التكاليف مش ROAS على ورق') +
+    kpi('blue','الصافي من الإعلانات المسجّلة','NET FROM LISTED ADS', money(earned - wasted,0),
+        dec(ads.length,0) + ' إعلان مسجّل') + '</div></div>';
+
+  var order = [
+    ['stop','الإعلانات اللي لازم توقف دلوقتي','var(--bad)'],
+    ['scale','الإعلانات الرابحة الثابتة — زوّدها','var(--good)'],
+    ['pot','مرشحين رابحين — سيبهم يكمّلوا','var(--yellow)'],
+    ['wait','لسه بدري — استنى عليهم','var(--muted)'],
+    ['na','ناقصة بيانات','var(--muted)']
+  ];
+  order.forEach(function(o){
+    var g = groups[o[0]]; if(!g.length) return;
+    html += '<div class="card"><h2><span class="dot" style="background:' + o[2] + '"></span> ' +
+      o[1] + ' <span style="font-family:var(--mono);font-size:12px;color:var(--muted-2)">(' + g.length + ')</span></h2>';
+    g.forEach(function(x){
+      var r = x.r;
+      html += '<div class="rec ' + ST[r.status].rc + '"><div class="r-top">' +
+        '<div class="r-name">' + (esc(x.a.name) || 'إعلان بدون اسم') + '</div>' + chip(r.status) + '</div>' +
+        '<div class="r-metrics">' +
+          '<div>المصروف<b>' + money(r.spend,0) + '</b></div>' +
+          '<div>الأوردرات<b>' + dec(r.pur,0) + '</b></div>' +
+          '<div>CPP<b class="' + (r.cpp !== null && r.cpp <= r.beCpp ? 'up':'down') + '">' + money(r.cpp,0) + '</b></div>' +
+          '<div>تعادل CPP<b>' + money(r.beCpp,0) + '</b></div>' +
+          '<div>ROAS<b class="' + (r.roas !== null && r.roas >= r.beRoas ? 'up':'down') + '">' +
+            (r.roas===null?'—':dec(r.roas,2)+'x') + '</b></div>' +
+          '<div>تعادل ROAS<b>' + (isFinite(r.beRoas)?dec(r.beRoas,2)+'x':'—') + '</b></div>' +
+          '<div>صافي الربح<b class="' + (r.profit>=0?'up':'down') + '">' + money(r.profit,0) + '</b></div>' +
+        '</div><div class="r-text">' + recText(x.a, r, k) + '</div></div>';
+    });
+    html += '</div>';
+  });
+
+  w.innerHTML = html;
+}
+function ss(cls, n, lab){
+  return '<div class="ss ' + cls + '"><div class="s-n">' + n + '</div><div class="s-l">' + lab + '</div></div>';
+}
+
+/* ======================= 04 — التقرير النهائي ============================ */
+function renderReport(){
+  var k = calc(), w = $('repWrap');
+  if(!k.ready){
+    w.innerHTML = '<div class="card"><div class="note"><b>التقرير هيظهر</b> بعد ما تملأ التكاليف الأساسية.</div></div>';
+    return;
+  }
+  var d = new Date();
+  var stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+  var html = '<div class="card accent"><h2><span class="dot"></span> تقرير الربحية — ' + stamp + '</h2>' +
+    '<p class="desc">صفحة واحدة تلخّص وضعك: التكاليف، نقطة التعادل، وكل إعلان وقراره. ' +
+    'اضغط «طباعة / PDF» فوق لتصديره.</p>';
+
+  html += '<div class="grid g4">' +
+    kpi('blue','تعادل ROAS','BREAK-EVEN ROAS', isFinite(k.beRoas)&&k.beCppConf>0?dec(k.beRoas,2)+'x':'—','أرقام المنصة') +
+    kpi('blue','تعادل CPP', 'BREAK-EVEN CPP', k.beCppConf>0?money(k.beCppConf,0):'—','أرقام المنصة') +
+    kpi(k.net>=0?'good':'bad','ROAS الحالي','CURRENT ROAS', dec(k.curRoas,2)+'x','CPP الحالي ' + money(k.curCpp,0)) +
+    kpi(k.net>=0?'good':'bad','صافي الربح الشهري','NET PROFIT', money(k.net,0),
+        k.margin===null?'':'هامش ' + dec(k.margin,1) + '%') + '</div>';
+
+  html += '<div class="sep"></div><div class="tw"><table><thead><tr>' +
+    '<th>البند</th><th>القيمة</th><th>البند</th><th>القيمة</th></tr></thead><tbody>' +
+    rrow('متوسط قيمة الطلب', money(num(cfg.aov),0), 'الأوردرات الشهرية', dec(num(cfg.orders),0)) +
+    rrow('نسبة التسليم', dec(k.dr*100,0) + '%', 'الأوردرات المسلّمة', dec(k.delivered,0)) +
+    rrow('تكلفة التصنيع للطلب', money(k.cogsUnit,1), 'شركة الشحن — للطلب المسلّم', money(num(cfg.ship),1)) +
+    rrow('شركة الشحن — للمرتجع', money(num(cfg.ret),0), 'رسوم شركة الشحن الشهرية', money(num(cfg.courier),0)) +
+    rrow('التكاليف الثابتة الشهرية', money(num(cfg.overhead),0), 'التكلفة الثابتة للطلب', money(k.fixedPer,1)) +
+    rrow('هامش الطلب المسلّم', money(k.cm,1), 'المصروف الإعلاني الشهري', money(num(cfg.spend),0)) +
+    '</tbody></table></div>';
+
+  if(ads.length){
+    html += '<div class="sep"></div><div class="tw"><table><thead><tr>' +
+      '<th>الإعلان</th><th>المصروف</th><th>أوردرات</th><th>CPP</th><th>تعادل CPP</th>' +
+      '<th>ROAS</th><th>صافي الربح</th><th>القرار</th></tr></thead><tbody>';
+    ads.map(function(a){ return {a:a, r:adCalc(a,k)}; })
+       .sort(function(x,y){ return y.r.profit - x.r.profit; })
+       .forEach(function(x){
+      html += '<tr><td>' + (esc(x.a.name)||'—') + '</td>' +
+        '<td class="n">' + money(x.r.spend,0) + '</td>' +
+        '<td class="n">' + dec(x.r.pur,0) + '</td>' +
+        '<td class="n">' + money(x.r.cpp,0) + '</td>' +
+        '<td class="n">' + money(x.r.beCpp,0) + '</td>' +
+        '<td class="n">' + (x.r.roas===null?'—':dec(x.r.roas,2)+'x') + '</td>' +
+        '<td class="n" style="color:' + (x.r.profit>=0?'var(--good)':'var(--bad)') + '">' + money(x.r.profit,0) + '</td>' +
+        '<td>' + chip(x.r.status) + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  html += '<p class="desc" style="margin:18px 0 0;font-size:11px;color:var(--muted-2)">' +
+    'كل الأرقام محسوبة من بياناتك المدخلة بقواعد ثابتة وشفافة · Direx Lab</p></div>';
+  w.innerHTML = html;
+}
+function rrow(l1,v1,l2,v2){
+  return '<tr><td>' + l1 + '</td><td class="n">' + v1 + '</td><td>' + l2 + '</td><td class="n">' + v2 + '</td></tr>';
+}
+
+/* ============================ إعادة الرسم ================================ */
+function renderAll(){
+  document.querySelectorAll('.cur').forEach(function(e){ e.textContent = cfg.cur; });
+  renderBE(); renderAds(); renderRec(); renderReport();
+}
+
+/* ============================== الربط ==================================== */
+var CFG_IDS = ['aov','orders','spend','dr','cogs','overhead','ship','ret','courier','cur','fees','thStop','thScale'];
+
+function fillInputs(){
+  CFG_IDS.forEach(function(id){
+    var el = $(id); if(!el) return;
+    el.value = (cfg[id] === 0 && id !== 'cur') ? '' : cfg[id];
+  });
+  $('cur').value = cfg.cur;
+  document.querySelectorAll('[data-cogs]').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-cogs') === cfg.cogsMode);
+  });
+}
+
+document.querySelectorAll('.cfg').forEach(function(el){
+  el.addEventListener('input', function(){
+    cfg[el.id] = el.id === 'cur' ? (el.value || 'ج.م') : num(el.value);
+    save(); renderAll();
+  });
+});
+document.querySelectorAll('[data-cogs]').forEach(function(b){
+  b.addEventListener('click', function(){
+    cfg.cogsMode = b.getAttribute('data-cogs');
+    document.querySelectorAll('[data-cogs]').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on'); save(); renderAll();
+  });
+});
+
+/* التبويبات */
+var TITLES = { t1:'التكاليف ونقطة التعادل', t2:'بيانات الإعلانات', t3:'التوصيات والقرارات', t4:'التقرير النهائي' };
+document.querySelectorAll('.navbtn').forEach(function(b){
+  b.addEventListener('click', function(){
+    var t = b.getAttribute('data-tab');
+    document.querySelectorAll('.navbtn').forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab').forEach(function(s){ s.classList.toggle('on', s.id === t); });
+    $('pageTitle').textContent = TITLES[t];
+    window.scrollTo(0,0);
+  });
+});
+
+/* جدول الإعلانات */
+$('adsBody').addEventListener('input', function(e){
+  var el = e.target; if(!el.classList.contains('tin')) return;
+  var i = +el.closest('tr').getAttribute('data-i');
+  var f = el.getAttribute('data-f');
+  ads[i][f] = f === 'name' ? el.value : (el.value === '' ? '' : num(el.value));
+  save();
+  /* مانعملش re-render للجدول كله عشان مايضيعش الفوكس من الخانة */
+  var k = calc(), r = adCalc(ads[i], k), tds = el.closest('tr').children;
+  tds[4].textContent = money(r.cpp,0);  tds[4].style.color = cmpColor(r.cpp, r.beCpp, true);
+  tds[5].textContent = r.roas===null?'—':dec(r.roas,2)+'x'; tds[5].style.color = cmpColor(r.roas, r.beRoas, false);
+  tds[6].textContent = money(r.profit,0); tds[6].style.color = r.profit>=0?'var(--good)':'var(--bad)';
+  tds[7].innerHTML = chip(r.status);
+  renderRec(); renderReport();
+});
+$('adsBody').addEventListener('click', function(e){
+  var d = e.target.getAttribute && e.target.getAttribute('data-del');
+  if(d === null || d === undefined) return;
+  ads.splice(+d,1); save(); renderAds(); renderRec(); renderReport();
+});
+$('btnAdd').addEventListener('click', function(){
+  ads.push({ id:uid++, name:'', spend:'', pur:'', rev:'' });
+  save(); renderAds();
+  var rows = $('adsBody').querySelectorAll('tr');
+  var last = rows[rows.length-1]; if(last) last.querySelector('.tin').focus();
+});
+$('btnClearAds').addEventListener('click', function(){
+  if(!ads.length) return;
+  if(confirm('هتمسح كل الإعلانات المسجّلة. تكاليفك هتفضل زي ما هي. تكمّل؟')){
+    ads = []; save(); renderAll(); toast('تم مسح الإعلانات');
+  }
+});
+
+/* ========================= استيراد CSV / لصق ============================= */
+var parsed = null;
+
+function splitLine(line, delim){
+  var out = [], cur = '', q = false;
+  for(var i=0;i<line.length;i++){
+    var ch = line[i];
+    if(ch === '"'){ if(q && line[i+1] === '"'){ cur += '"'; i++; } else { q = !q; } }
+    else if(ch === delim && !q){ out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map(function(s){ return s.trim().replace(/^"|"$/g,''); });
+}
+function toNum(v){
+  if(v === undefined || v === null) return 0;
+  var s = String(v).replace(/[^\d.\-]/g,'');   /* بيشيل رموز العملة والفواصل */
+  var n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+}
+function guess(headers, pats, avoid){
+  for(var p=0;p<pats.length;p++){
+    for(var i=0;i<headers.length;i++){
+      var h = headers[i].toLowerCase();
+      if(h.indexOf(pats[p]) === -1) continue;
+      var bad = false;
+      (avoid||[]).forEach(function(a){ if(h.indexOf(a) !== -1) bad = true; });
+      if(!bad) return i;
+    }
+  }
+  return -1;
+}
+function fillSel(sel, headers, sel_i, optional){
+  sel.innerHTML = (optional ? '<option value="-1">— بدون —</option>' : '') +
+    headers.map(function(h,i){ return '<option value="' + i + '">' + esc(h || ('عمود ' + (i+1))) + '</option>'; }).join('');
+  sel.value = String(sel_i);
+}
+
+$('btnImp').addEventListener('click', function(){ $('impBox').classList.toggle('on'); });
+$('btnCancelImp').addEventListener('click', function(){
+  $('impBox').classList.remove('on'); $('mapBox').style.display = 'none';
+  $('btnDoImp').style.display = 'none'; $('impMsg').innerHTML = ''; parsed = null;
+});
+
+$('btnParse').addEventListener('click', function(){
+  var txt = $('impText').value.trim();
+  if(!txt){ $('impMsg').innerHTML = '<div class="note bad-note">الصق الداتا الأول.</div>'; return; }
+  var lines = txt.split(/\r?\n/).filter(function(l){ return l.trim() !== ''; });
+  if(lines.length < 2){ $('impMsg').innerHTML = '<div class="note bad-note">محتاج صف عناوين + صف بيانات على الأقل.</div>'; return; }
+
+  var delim = (lines[0].split('\t').length > lines[0].split(',').length) ? '\t' : ',';
+  var headers = splitLine(lines[0], delim);
+  var rows = lines.slice(1).map(function(l){ return splitLine(l, delim); })
+                  .filter(function(r){ return r.join('').trim() !== ''; });
+
+  parsed = { headers:headers, rows:rows };
+
+  var iName = guess(headers, ['ad name','اسم الإعلان','الإعلان','ad set','campaign','name','اسم'], ['id']);
+  var iRev  = guess(headers, ['conversion value','purchases value','revenue','قيمة التحويل','قيمة المبيعات','العائد','الإيراد']);
+  var iPur  = guess(headers, ['website purchases','purchases','results','orders','نتائج','النتائج','المشتريات','الطلبات','اوردر'],
+                    ['value','cost','قيمة','تكلفة','per']);
+  var iSp   = guess(headers, ['amount spent','spend','cost','المبلغ','المصروف','الإنفاق','التكلفة'], ['per','result','قيمة']);
+
+  fillSel($('mName'), headers, iName < 0 ? 0 : iName, false);
+  fillSel($('mSpend'), headers, iSp   < 0 ? 0 : iSp,  false);
+  fillSel($('mPur'),   headers, iPur  < 0 ? 0 : iPur, false);
+  fillSel($('mRev'),   headers, iRev  < 0 ? -1 : iRev, true);
+
+  $('mapBox').style.display = 'grid';
+  $('btnDoImp').style.display = 'inline-flex';
+  $('impMsg').innerHTML = '<div class="note">قريت <b>' + rows.length + '</b> صف و<b>' + headers.length +
+    '</b> عمود. راجع ربط الأعمدة فوق وبعدين اضغط «استيراد البيانات».</div>';
+});
+
+$('btnDoImp').addEventListener('click', function(){
+  if(!parsed) return;
+  var iN = +$('mName').value, iS = +$('mSpend').value, iP = +$('mPur').value, iR = +$('mRev').value;
+  var added = 0;
+  parsed.rows.forEach(function(r){
+    var name = iN >= 0 ? (r[iN] || '') : '';
+    var sp = toNum(r[iS]), pu = toNum(r[iP]);
+    if(!name && !sp) return;
+    ads.push({ id:uid++, name:name, spend:sp, pur:pu, rev: iR >= 0 ? toNum(r[iR]) : '' });
+    added++;
+  });
+  save(); renderAll();
+  $('impBox').classList.remove('on'); $('mapBox').style.display = 'none';
+  $('btnDoImp').style.display = 'none'; $('impText').value = ''; $('impMsg').innerHTML = ''; parsed = null;
+  toast('تم استيراد ' + added + ' إعلان');
+});
+
+/* ========================== أدوات عامة =================================== */
+$('btnDemo').addEventListener('click', function(){
+  if(ads.length && !confirm('هيتم استبدال البيانات الحالية ببيانات تجريبية. تكمّل؟')) return;
+  cfg = Object.assign({}, DEF, {
+    aov:950, orders:420, spend:78000, dr:75, cogs:260, cogsMode:'unit',
+    overhead:45000, ship:60, ret:45, courier:8000, cur:'ج.م', fees:0, thStop:500, thScale:4000
+  });
+  ads = [
+    { id:uid++, name:'UGC — مراجعة العميلة',      spend:21500, pur:74, rev:'' },
+    { id:uid++, name:'Static — عرض الباندل',      spend:9800,  pur:26, rev:'' },
+    { id:uid++, name:'Video — قبل وبعد',          spend:14300, pur:46, rev:'' },
+    { id:uid++, name:'Carousel — الألوان الجديدة',spend:3100,  pur:12, rev:'' },
+    { id:uid++, name:'Static — خصم ١٠٪',          spend:420,   pur:0,  rev:'' },
+    { id:uid++, name:'UGC — تجربة الاستخدام',     spend:1650,  pur:2,  rev:'' }
+  ];
+  fillInputs(); save(); renderAll(); toast('تم تحميل بيانات تجريبية');
+});
+
+$('btnReset').addEventListener('click', function(){
+  if(!confirm('هيتم مسح كل البيانات (التكاليف + الإعلانات). تكمّل؟')) return;
+  cfg = Object.assign({}, DEF); ads = [];
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  fillInputs(); renderAll(); toast('تم مسح كل البيانات');
+});
+
+$('btnPrint').addEventListener('click', function(){ window.print(); });
+
+/* نسخة احتياطية: ملف JSON فيه التكاليف + الإعلانات */
+$('btnBackup').addEventListener('click', function(){
+  var d = new Date();
+  var stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  var blob = new Blob([JSON.stringify({ v:1, cfg:cfg, ads:ads }, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'direx-profit-' + stamp + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  toast('تم تنزيل نسخة من بياناتك');
+});
+
+$('fileLoad').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var d = JSON.parse(r.result);
+      if(!d || !d.cfg) throw new Error('bad');
+      cfg = Object.assign({}, DEF, d.cfg);
+      ads = (d.ads || []).map(function(a){ a.id = uid++; return a; });
+      fillInputs(); save(); renderAll(); toast('تم استرجاع النسخة');
+    }catch(err){ alert('الملف ده مش نسخة صالحة من بيانات اللوحة.'); }
+    e.target.value = '';
+  };
+  r.readAsText(f);
+});
+
+/* ============================== البداية ================================== */
+load();
+fillInputs();
+renderAll();
+</script>
+</body>
+</html>
